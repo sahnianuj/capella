@@ -31,7 +31,7 @@ We also going to need Capella Database user credential at the time of restore th
 
 From Capella dashboard, select the Cluster first and then hit `Connect > Manage Credentials > Create Database Credential`.
 
-In this example we are going to create a credential with username as `xdcr` and password as <passwd>. Select `All Buckets`, `All Scopes` and `Read/Write` access and finally hit `Create` button.
+In this example we are going to create a credential with username as `xdcr` and password as `passwd`. Select `All Buckets`, `All Scopes` and `Read/Write` access and finally hit `Create` button.
 
 ### 1. Take a full-backup of data on current Cluster
 
