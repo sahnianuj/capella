@@ -1,5 +1,5 @@
 
-##Migrating data from self-managed to Capella
+## Migrating data from self-managed to Capella
 
 ### Prerequisites
 
@@ -46,8 +46,8 @@ Once the container is up SSH into that container and set these environment varia
 ```shell
 export AWS_REGION=us-west-2
 export CB_AWS_ENABLE_EC2_METADATA=true
-export AWS_ACCESS_KEY_ID=AKIA3KLIJRRWQIXWZZMP
-export AWS_SECRET_ACCESS_KEY=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
+export AWS_ACCESS_KEY_ID=XXXXX
+export AWS_SECRET_ACCESS_KEY=YYYY/ZZZ
 ```
 `Note`: Due to Couchbase image mismatch (between Couchbase Cluster and the binaries on the docker container) there is a possibility that backup and/or restore job may fail so make sure they are same
 
