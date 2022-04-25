@@ -27,6 +27,11 @@ We have to manually create the same buckets on Capella cluster that exists on th
 
 #### c) Create Database user in Capella
 
+We also going to need Capella Database user credential at the time of restore that has Read/Write access to all the buckets under the cluster.
+
+From Capella dashboard, select the Cluster first and then hit `Connect > Manage Credentials > Create Database Credential`.
+
+In this example we are going to create a credential with username as `xdcr` and password as <passwd>. Select `All Buckets`, `All Scopes` and `Read/Write` access and finally hit `Create` button.
 
 ### 1. Take a full-backup of data on current Cluster
 
@@ -71,7 +76,7 @@ Name              | Size | # Backups |
 capella-migration | 0B   | 0         |
 
 ```
-At this point we are ready to take a full-backup under the newly configured repository `capella-migration`.
+At this point we are ready to take a full-backup under the newly configured repository `capella-migration-0413`.
 
 ```shell
 
