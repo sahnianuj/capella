@@ -17,6 +17,23 @@ $ curl https://canhazip.com/
 
 The IP returned should be used to whitelist on the Capella cluster by clicking `Connect > Manage Allowed IP > Add Allowed IP`
 
+Once you are done white-listing the IP you can verify the connectivity from source cluster by running `nslookup`. Before you run below command make sure your instance has `nslookup` installed. Here is the command you would use to verify the connectivity from source cluster to Capella cluster SRV:
+
+```SHELL
+$nslookup -type=SRV _couchbases._tcp.cb.alpha.cloud.couchbase.com
+Server:         10.100.0.10
+Address:        10.100.0.10#53
+
+Non-authoritative answer:
+_couchbases._tcp.cb.alias name="#statement".cloud.couchbase.com        service = 0 0 11207 a.abc.cloud.couchbase.com.
+_couchbases._tcp.cb.b.cloud.couchbase.com        service = 0 0 11207 b.xvz.cloud.couchbase.com.
+_couchbases._tcp.cb.c.cloud.couchbase.com        service = 0 0 11207 c.efg.cloud.couchbase.com.
+
+Authoritative answers can be found from:
+```
+
+***Note***: In the SRV name above `cb.alpha.cloud.couchbase.com` is the cluster's WAN name that can be found from `Connect > Connection` tab and `_couchbases._tcp.` is the prefix which you have to add every-time.
+
 #### b) Create Buckets in Capella
 
 We have to manually create the same buckets on Capella cluster that exists on the source cluster to be able to apply backup restores.
@@ -60,33 +77,44 @@ We are now ready to run the `cbbackupmgr config` command to create a new reposit
 
 ```shell
 $ cbbackupmgr config -a s3://cbdbdemo-backup/blue/archive \
--r capella-migration-0413 --obj-staging-dir /tmp/staging
+-r capella-migration-0426 --obj-staging-dir /tmp/staging
 
 
-Backup repository `capella-migration-0413` created successfully in
+Backup repository `capella-migration-0426` created successfully in
 archive `s3://cbdbdemo-backup/blue/archive`
 ```
 Run `info` command to list the snapshots under the repository. There is not going to be anything because we didn't take any backup but it still a good test.
 
 ```shell
 $ cbbackupmgr info -a s3://cbdbdemo-backup/blue/archive  \
--r capella-migration-0413 --obj-staging-dir /tmp/staging
+-r capella-migration-0426 --obj-staging-dir /tmp/staging
 
 Name              | Size | # Backups |
 capella-migration | 0B   | 0         |
 
 ```
-At this point we are ready to take a full-backup under the newly configured repository `capella-migration-0413`.
+At this point we are ready to take a full-backup under the newly configured repository `capella-migration-0426`.
 
 ```shell
 
 $ cbbackupmgr backup -c couchbases://blue.cb.svc.cluster.local:18091 \
--a s3://cbdbdemo-backup/blue/archive -r capella-migration-0413 \
+-a s3://cbdbdemo-backup/blue/archive -r capella-migration-0426 \
 --obj-staging-dir /tmp/staging  --full-backup  --threads 4  \
 --no-ssl-verify -u Administrator -p <passwd>
 ```
 
 `Note`: You can also take a incremental-backup within an existing archieve but we would like restore to go fastest by taking a fresh full-backup.
+
+Run `info` command again to list the snapshots under the repository. This time there is going to be at least one snapshot that we just took:
+
+```shell
+$ cbbackupmgr info -a s3://cbdbdemo-backup/blue/archive  \
+-r capella-migration-0426 --obj-staging-dir /tmp/staging
+
+Name              | Size | # Backups |
+capella-migration | 0B   | 0         |
+
+```
 
 #### 1.b)  Backup via Cronjob
 
@@ -100,7 +128,7 @@ First find out the endpoint of one of node of the Capella Cluster. In my example
 
 
 $ cbbackupmgr restore -c https://8bf.cloud.couchbase.com:18091 \
--a s3://cbdbdemo-backup/blue/archive  -r capella-migration-0413 \
+-a s3://cbdbdemo-backup/blue/archive  -r capella-migration-0426 \
 --obj-staging-dir /tmp/staging/  --threads 4 \
 --no-ssl-verify -u xdcr -p <passwd>
 
