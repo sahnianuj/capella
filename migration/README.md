@@ -1,9 +1,10 @@
 
-## Migrating data from self-managed to Capella
+# Migrating data to Capella
 
-### Prerequisites
 
-#### a) Whitelist Source cluster NAT Gateway Elastic IPs
+## Prerequisites
+
+### 1) Whitelist Source cluster NAT Gateway Elastic IPs
 
 For Capella cluster to be able to communicate with your managed cluster, you either need to while Whitelist NAT Gateways or VPC peer the hosted cluster with the Capella cluster. Here is how you can find out the IP address of the hosted cluster:
 
@@ -17,7 +18,7 @@ $ curl https://canhazip.com/
 
 The IP returned should be used to whitelist on the Capella cluster by clicking `Connect > Manage Allowed IP > Add Allowed IP`
 
-Once you are done white-listing the IP you can verify the connectivity from source cluster by running `nslookup`. Before you run below command make sure your instance has `nslookup` installed. Here is the command you would use to verify the connectivity from source cluster to Capella cluster SRV:
+Once you are done white-listing the IP you can verify the connectivity from source cluster by running `nslookup` from any node on the source cluster. Make sure, however, your instance has `nslookup` installed. Here is the command you would use to verify the connectivity from source cluster to Capella cluster SRV:
 
 ```SHELL
 $nslookup -type=SRV _couchbases._tcp.cb.alpha.cloud.couchbase.com
@@ -34,7 +35,7 @@ Authoritative answers can be found from:
 
 ***Note***: In the SRV name above `cb.alpha.cloud.couchbase.com` is the cluster's WAN name that can be found from `Connect > Connection` tab and `_couchbases._tcp.` is the prefix which you have to add every-time.
 
-#### b) Create Buckets in Capella
+### 2) Create Buckets in Capella
 
 We have to manually create the same buckets on Capella cluster that exists on the source cluster to be able to apply backup restores.
 
@@ -42,7 +43,7 @@ We have to manually create the same buckets on Capella cluster that exists on th
 **Note:** Bucket conflict resolution should also match between source and target clusters otherwise restore would fail.
 {% endhint %}
 
-#### c) Create Database user in Capella
+### 3) Create Database user in Capella
 
 We also going to need Capella Database user credential at the time of restore that has Read/Write access to all the buckets under the cluster.
 
@@ -50,14 +51,16 @@ From Capella dashboard, select the Cluster first and then hit `Connect > Manage 
 
 In this example we are going to create a credential with username as `xdcr` and password as `passwd`. Select `All Buckets`, `All Scopes` and `Read/Write` access and finally hit `Create` button.
 
-### 1. Take a full-backup of data on current Cluster
+## Backup and Restore (for data migration)
+
+### 1. Perform Full Backup on source Cluster
 
 Here we are making an assumption that you have backup configured already with AWS S3. S3 would help us access backup snapshots easily during restore.
 
 
 
 
-#### 1.a) Manual backup via cbbackupmgr
+#### a) Manual backup via cbbackupmgr
 
 In case you don't have cluster deployed and managed via K8s, then you can still use `cbbackupmgr` cli to trigger full backup. In our example we will be using a docker image (separate from CB Cluster) to be source of executing BR commands.
 
@@ -77,28 +80,28 @@ We are now ready to run the `cbbackupmgr config` command to create a new reposit
 
 ```shell
 $ cbbackupmgr config -a s3://cbdbdemo-backup/blue/archive \
--r capella-migration-0426 --obj-staging-dir /tmp/staging
+-r capella-migration-0516 --obj-staging-dir /tmp/staging
 
 
-Backup repository `capella-migration-0426` created successfully in
+Backup repository `capella-migration-0516` created successfully in
 archive `s3://cbdbdemo-backup/blue/archive`
 ```
 Run `info` command to list the snapshots under the repository. There is not going to be anything because we didn't take any backup but it still a good test.
 
 ```shell
 $ cbbackupmgr info -a s3://cbdbdemo-backup/blue/archive  \
--r capella-migration-0426 --obj-staging-dir /tmp/staging
+-r capella-migration-0516 --obj-staging-dir /tmp/staging
 
 Name              | Size | # Backups |
 capella-migration | 0B   | 0         |
 
 ```
-At this point we are ready to take a full-backup under the newly configured repository `capella-migration-0426`.
+At this point we are ready to take a full-backup under the newly configured repository `capella-migration-0516`.
 
 ```shell
 
 $ cbbackupmgr backup -c couchbases://blue.cb.svc.cluster.local:18091 \
--a s3://cbdbdemo-backup/blue/archive -r capella-migration-0426 \
+-a s3://cbdbdemo-backup/blue/archive -r capella-migration-0516 \
 --obj-staging-dir /tmp/staging  --full-backup  --threads 4  \
 --no-ssl-verify -u Administrator -p <passwd>
 ```
@@ -109,34 +112,58 @@ Run `info` command again to list the snapshots under the repository. This time t
 
 ```shell
 $ cbbackupmgr info -a s3://cbdbdemo-backup/blue/archive  \
--r capella-migration-0426 --obj-staging-dir /tmp/staging
+-r capella-migration-0516 --obj-staging-dir /tmp/staging
 
-Name              | Size | # Backups |
-capella-migration | 0B   | 0         |
+Name                   | Size      | # Backups |
+capella-migration-0426 | 215.97MiB | 1         |
+
++  Backup                         | Size      | Type | Source                                       | Cluster UUID                     | Range | Events | Aliases | Complete |
++  2022-04-27T19_41_39.916765854Z | 215.97MiB | FULL | couchbases://cluster:18091 | xvz | N/A   | 0      | 0       | true     |
 
 ```
 
-#### 1.b)  Backup via Cronjob
+#### b)  Backup via Cronjob
 
 If you already have Couchbase Autonomous Operator managed backup cronjobs setup then taking a full backup is as simple as triggering the cronjob.
 
-### 2. Restore backup to Capella
+### 2. Restore Backup to Capella
 
 First find out the endpoint of one of node of the Capella Cluster. In my example I will be using `8bf.cloud.couchbase.com` as the endpoint. Replace the password as `-p` and repository name as `-a`  where the backup snapshots are saved earlier and then execute below shell command:
 
 ```shell
 
 
-$ cbbackupmgr restore -c https://8bf.cloud.couchbase.com:18091 \
--a s3://cbdbdemo-backup/blue/archive  -r capella-migration-0426 \
+$ cbbackupmgr restore -c https://3thfesc0aszntesi.fcokdfqzloopic-u.cloud.couchbase.com:18091 \
+-a s3://cbdbdemo-backup/blue/archive  -r capella-migration-0516 \
 --obj-staging-dir /tmp/staging/  --threads 4 \
 --no-ssl-verify -u xdcr -p <passwd>
 
 ```
 
+### 3. Run pillowfight to ingest data after restore
+
+In the demo we would like to demostrate that after restoration of backup snapshot is done, any new mutations can be replicated to Capella via XDCR. In order to generate constant workload we are going to run `cbc pillowfight` tool to generate more mutations to the source bucket. Here is the command we used after performing `SSH` to one of the couchbase pod where we already have `Couchbase Home Directory` available and in the path:
+
+```SHELL
+$ cbc pillowfight -U couchbase://localhost/travel-sample -u Administrator \
+--num-items 10000 --json --subdoc -m 1000 -M 5000 -P <passwd>
+
+```
+## XDCR for continuous replication
+
+
+
+Once you have restored the data to Capella cluster, indexes for each bucket would be created as well. At this point if you would like to keep the source cluster (self-managed) active and data to be replicated to Capella cluster, XDCR can be used to initiate from source cluster to Capella Cluster.
+
+Here are the steps you would need to perform to complete the uni-directional replication.
+
+
 
 
 ## Auxiliary
+
+
+
 
 ### 1. Backup/Restore Pod yaml
 
