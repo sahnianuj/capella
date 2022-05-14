@@ -153,9 +153,41 @@ $ cbc pillowfight -U couchbase://localhost/travel-sample -u Administrator \
 
 
 
-Once you have restored the data to Capella cluster, indexes for each bucket would be created as well. At this point if you would like to keep the source cluster (self-managed) active and data to be replicated to Capella cluster, XDCR can be used to initiate from source cluster to Capella Cluster.
+Once you have restored the data to Capella cluster, indexes for each bucket would be created as well. At this point if you would like to keep the source cluster (self-managed) active and data to be replicated to Capella cluster, XDCR can be initiated from source cluster to Capella Cluster.
 
 Here are the steps you would need to perform to complete the uni-directional replication.
+1. Get the IP Address of the Couchbase nodes: (change blue-0000 to the name of each of the pods running)
+```SHELL
+  kubectl exec -ti blue-0000 -- curl https://canhazip.com/
+```
+The expected results will be as follows:
+
+```SHELL
+  34.123.21.190
+```
+
+
+2. Add the collected IP addresses from Step 1 to the Allowed IP addresses in Capella > "Cluster Name" > Connect > Manage IP Addresses
+
+3. Create Database Credentials for the XDCR connection in the Database Access > Manage Credentials section. Give the db user (this is not access to the Capella UI) the needed access permissions (Bucket/Scope/Read &/or Write).
+
+4. Copy the Root Certificate details by selecting 'Copy' in the Security Certificate section and paste it to a text file for later reference.
+
+5. Copy the data node address from Cluster > Nodes Section, the right edge of the line as a copy icon to ease the process.
+
+6. Go back to the self-managed instance of Couchbase and start setting up XDCR replication by selecting 'Add Remote' and enter the values from Steps 3 - 5.
+  a) Cluster Name = 'matrix-capella' (This name has no bearing on the destination and is there to help understand it's purpose
+  b) IP/ Hostname = Paste the value from step 5. Make sure to add `:18091` at the end of the hostname. For example: `a.abc.cloud.couchbase.com:18091`
+  c) Username / Password = use the database user credentials created in step 3.
+  d) Check "Enable Secure Connection"
+  e) Select "Full (TLS encrypted password and data)" and paste the contents from step 4.
+  f) Select Save
+
+7. Add Replication by selecting the local bucket name, typing in the exact name of the remote bucket in Capella and selecting the remote cluster setup in step 6. Select Save.
+
+8. Toggle to Capella and you will see the files begin to populate.
+
+You've just completed replicating files from selfManaged Couchbase into Capella.
 
 
 
