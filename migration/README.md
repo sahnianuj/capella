@@ -176,12 +176,18 @@ The expected results will be as follows:
 5. Copy the data node address from Cluster > Nodes Section, the right edge of the line as a copy icon to ease the process.
 
 6. Go back to the self-managed instance of Couchbase and start setting up XDCR replication by selecting 'Add Remote' and enter the values from Steps 3 - 5.
-  a) Cluster Name = 'matrix-capella' (This name has no bearing on the destination and is there to help understand it's purpose
-  b) IP/ Hostname = Paste the value from step 5. Make sure to add `:18091` at the end of the hostname. For example: `a.abc.cloud.couchbase.com:18091`
-  c) Username / Password = use the database user credentials created in step 3.
-  d) Check "Enable Secure Connection"
-  e) Select "Full (TLS encrypted password and data)" and paste the contents from step 4.
-  f) Select Save
+
+    a) Cluster Name = 'matrix-capella' (This name has no bearing on the destination and is there to help understand it's purpose
+
+    b) IP/ Hostname = Paste the value from step 5. Make sure to add `:18091` at the end of the hostname. For example: `a.abc.cloud.couchbase.com:18091`
+
+    c) Username / Password = use the database user credentials created in step 3.
+
+    d) Check "Enable Secure Connection"
+
+    e) Select "Full (TLS encrypted password and data)" and paste the contents from step 4.
+
+    f) Select Save
 
 7. Add Replication by selecting the local bucket name, typing in the exact name of the remote bucket in Capella and selecting the remote cluster setup in step 6. Select Save.
 
